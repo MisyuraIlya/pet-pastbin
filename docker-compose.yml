@@ -1,0 +1,114 @@
+services:
+  # Load Balancer to route to API service
+  api_load_balancer:
+    image: nginx:latest
+    container_name: api_load_balancer
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-api.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api_service
+
+  # API Service
+  api_service:
+    build: ./api-service
+    container_name: api_service
+    environment:
+      HASH_SERVICE_URL: http://hash_service:3000
+      S3_LOAD_BALANCER_URL: http://s3_load_balancer:80
+      BLOCK_CACHE_REDIS_URL: redis://block_cache_redis:6380
+      METADATA_CACHE_REDIS_URL: redis://metadata_cache_redis:6381
+      METADATA_DB_URL: postgres://metadata_db_user:metadata_db_password@metadata_db:5432/metadata_db
+    ports:
+      - "8080:3000"
+
+  # Hash Generator Service
+  hash_service:
+    build: ./hash-service
+    container_name: hash_service
+    environment:
+      POSTGRES_DB: hash_db
+      POSTGRES_USER: hash_db_user
+      POSTGRES_PASSWORD: hash_db_password
+      REDIS_URL: redis://hash_redis:6382
+    ports:
+      - "5000:3000"
+    depends_on:
+      - hash_db
+      - hash_redis
+
+  hash_db:
+    image: postgres:latest
+    container_name: hash_db
+    environment:
+      POSTGRES_DB: hash_db
+      POSTGRES_USER: hash_db_user
+      POSTGRES_PASSWORD: hash_db_password
+    volumes:
+      - hash_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"  # Ensure this port is exposed
+
+  hash_redis:
+    image: redis:latest
+    container_name: hash_redis
+    ports:
+      - "6382:6379"
+
+  # Load Balancer for S3
+  s3_load_balancer:
+    image: nginx:latest
+    container_name: s3_load_balancer
+    ports:
+      - "9000:80"
+    volumes:
+      - ./nginx-s3.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - s3_service
+
+  # Simulated S3 Service
+  s3_service:
+    image: minio/minio:latest
+    container_name: s3_service
+    ports:
+      - "9001:9000"
+      - "9002:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - s3_data:/data
+    command: server /data --console-address ":9001"
+
+  # Redis for block cache
+  block_cache_redis:
+    image: redis:latest
+    container_name: block_cache_redis
+    ports:
+      - "6380:6379"
+
+  # Redis for metadata cache
+  metadata_cache_redis:
+    image: redis:latest
+    container_name: metadata_cache_redis
+    ports:
+      - "6381:6379"
+
+  # PostgreSQL for metadata
+  metadata_db:
+    image: postgres:latest
+    container_name: metadata_db
+    environment:
+      POSTGRES_DB: metadata_db
+      POSTGRES_USER: metadata_db_user
+      POSTGRES_PASSWORD: metadata_db_password
+    volumes:
+      - metadata_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Use a different port if 5432 is taken
+
+volumes:
+  hash_db_data:
+  s3_data:
+  metadata_db_data:
