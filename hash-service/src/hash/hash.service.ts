@@ -15,19 +15,27 @@ export class HashService {
   ) {}
 
   async generateHash(): Promise<string> {
-    // Get a unique ID from PostgreSQL
+    const cachedHash = await this.redisService.get('current_hash');
+    if (cachedHash) {
+      this.updateCacheWithNewHash();
+
+      return cachedHash;
+    }
+
+    const newHash = await this.createAndCacheNewHash();
+    return newHash;
+  }
+
+  private async createAndCacheNewHash(): Promise<string> {
     const hashRecord = await this.hashRepository.save(new Hash());
-
-    // Encode the ID in base64
-    const hash = base64url.encode(hashRecord.id).slice(0, 8);
-
-    // Save the hash to Redis
-    await this.redisService.set(hash, hashRecord.id);
-
-    // Update the record with the generated hash
-    hashRecord.hash = hash;
-    await this.hashRepository.save(hashRecord);
-
+    const hash = base64url.encode(hashRecord.id.toString());
+    await this.redisService.set('current_hash', hash);
     return hash;
+  }
+
+  private async updateCacheWithNewHash(): Promise<void> {
+    const hashRecord = await this.hashRepository.save(new Hash());
+    const newHash = base64url.encode(hashRecord.id.toString());
+    await this.redisService.set('current_hash', newHash);
   }
 }
