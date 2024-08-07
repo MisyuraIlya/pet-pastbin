@@ -5,6 +5,7 @@ import { PostModule } from './post/post.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { RedisModule } from './redis.module';
+import { S3Module } from './s3/s3.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { RedisModule } from './redis.module';
     }),
     RedisModule,
     PostModule,
+    S3Module,
   ],
   controllers: [AppController],
   providers: [AppService],

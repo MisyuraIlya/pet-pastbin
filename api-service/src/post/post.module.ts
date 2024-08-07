@@ -5,12 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Post } from './entities/post.entity';
 import { HttpModule } from '@nestjs/axios';
 import { RedisModule } from '../redis.module'; 
+import { S3Module } from 'src/s3/s3.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Post]), // Import Post repository
-    HttpModule, // Import HttpModule for HttpService
+    TypeOrmModule.forFeature([Post]), 
+    HttpModule,
     RedisModule,
+    S3Module,
   ],
   controllers: [PostController],
   providers: [PostService],

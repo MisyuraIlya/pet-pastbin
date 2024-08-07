@@ -28,7 +28,7 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/typeorm": "^10.0.2",
-    "aws-sdk": "^2.1667.0",
+    "aws-sdk": "^2.814.0",
     "axios": "^1.7.3",
     "ioredis": "^5.4.1",
     "minio": "^8.0.1",
