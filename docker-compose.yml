@@ -1,12 +1,12 @@
 version: '3.8'
 
 services:
-  # Load Balancer to route to API service
+  # First Load Balancer to route to API service
   api_load_balancer:
     image: nginx:latest
     container_name: api_load_balancer
     ports:
-      - "8081:80"  # Changed port mapping here
+      - "8081:80"  # Expose port 8081 for API load balancer
     volumes:
       - ./nginx-api.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -18,7 +18,7 @@ services:
     container_name: api_service
     environment:
       HASH_SERVICE_URL: http://hash_service:3000
-      S3_LOAD_BALANCER_URL: http://s3_load_balancer:8082  # Changed port mapping here
+      S3_LOAD_BALANCER_URL: http://s3_load_balancer:8082  # This URL will route to the second load balancer
       BLOCK_CACHE_REDIS_URL: redis://block_cache_redis:6380
       METADATA_CACHE_REDIS_URL: redis://metadata_cache_redis:6381
       METADATA_DB_URL: postgres://metadata_db_user:metadata_db_password@metadata_db:5432/metadata_db
@@ -32,6 +32,20 @@ services:
       - minio
       - block_cache_redis
       - metadata_cache_redis
+
+  # Second Load Balancer to route to S3, Redis, PostgreSQL
+  s3_load_balancer:
+    image: nginx:latest
+    container_name: s3_load_balancer
+    ports:
+      - "8082:80"  # Expose port 8082 for the second load balancer
+    volumes:
+      - ./nginx-s3.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - minio
+      - block_cache_redis
+      - metadata_cache_redis
+      - metadata_db
 
   # Hash Generator Service
   hash_service:
@@ -65,17 +79,6 @@ services:
     container_name: hash_redis
     ports:
       - "6382:6379"
-
-  # Load Balancer for S3
-  s3_load_balancer:
-    image: nginx:latest
-    container_name: s3_load_balancer
-    ports:
-      - "8082:80"  # Changed port mapping here
-    volumes:
-      - ./nginx-s3.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - minio
 
   # Simulated S3 Service (MinIO)
   minio:
