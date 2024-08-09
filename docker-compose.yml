@@ -16,16 +16,6 @@ services:
   api_service:
     build: ./api-service
     container_name: api_service
-    environment:
-      HASH_SERVICE_URL: http://hash_service:3000
-      S3_LOAD_BALANCER_URL: http://s3_load_balancer:8082  # This URL will route to the second load balancer
-      BLOCK_CACHE_REDIS_URL: redis://block_cache_redis:6380
-      METADATA_CACHE_REDIS_URL: redis://metadata_cache_redis:6381
-      METADATA_DB_URL: postgres://metadata_db_user:metadata_db_password@metadata_db:5432/metadata_db
-      AWS_ACCESS_KEY_ID: minioadmin
-      AWS_SECRET_ACCESS_KEY: minioadmin
-      AWS_REGION: us-east-1
-      S3_ENDPOINT: http://minio:9000
     ports:
       - "8080:3000"
     depends_on:

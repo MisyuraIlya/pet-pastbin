@@ -35,7 +35,7 @@ export class PostService {
       post.content = fileLink.Key;
       return this.postRepository.save(post);
     } catch (err) {
-      throw new Error('Failed to create post');
+      throw new Error(`Failed to create post: ${err}`);
     }
   }
 

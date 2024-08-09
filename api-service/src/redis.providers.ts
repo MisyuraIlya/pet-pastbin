@@ -9,13 +9,13 @@ export const redisProviders: Provider[] = [
   {
     provide: REDIS_BLOCK_CACHE,
     useFactory: () => {
-      return new Redis('redis://block_cache_redis:6379');
+      return new Redis(`${process.env.BLOCK_CACHE_REDIS_URL}`);
     },
   },
   {
     provide: REDIS_METADATA_CACHE,
     useFactory: () => {
-      return new Redis('redis://metadata_cache_redis:6379');
+      return new Redis(`${process.env.METADATA_CACHE_REDIS_URL}`);
     },
   },
 ];
