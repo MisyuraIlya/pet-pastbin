@@ -1,7 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { HashService } from './hash.service';
-import { CreateHashDto } from './dto/create-hash.dto';
-import { UpdateHashDto } from './dto/update-hash.dto';
 
 @Controller('hash')
 export class HashController {
