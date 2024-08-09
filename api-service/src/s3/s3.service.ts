@@ -52,7 +52,12 @@ export class S3Service implements OnModuleInit {
       Bucket: this.bucketName,
       Key: filename,
     };
-
+    
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    await sleep(3000);
+    
     return this.s3.getObject(params).promise();
   }
 }

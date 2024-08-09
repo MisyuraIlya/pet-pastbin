@@ -1,22 +1,15 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { HttpService } from '@nestjs/axios';
-import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
 import { Repository } from 'typeorm';
 import { Post } from './entities/post.entity';
 import { REDIS_BLOCK_CACHE, REDIS_METADATA_CACHE } from 'src/redis.providers';
-import { Client as MinioClient } from 'minio';
-import { S3 } from 'aws-sdk';
 import { S3Service } from 'src/s3/s3.service';
 import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class PostService {
-  private readonly logger = new Logger(PostService.name);
-  private readonly s3: S3;
-  private readonly bucketName: string = 'my-bucket';
-
   constructor(
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
@@ -24,15 +17,10 @@ export class PostService {
     @Inject(REDIS_BLOCK_CACHE) private readonly blockCacheClient: Redis,
     @Inject(REDIS_METADATA_CACHE) private readonly metadataCacheClient: Redis,
     private readonly S3Service: S3Service
-  ) {
-
-  }
-
-
+  ) {}
 
   async createPost(content: string): Promise<Post> {
     if (!content) {
-      this.logger.error('Content is required to create a post.');
       throw new Error('Content is required to create a post.');
     }
 
@@ -47,42 +35,81 @@ export class PostService {
       post.content = fileLink.Key;
       return this.postRepository.save(post);
     } catch (err) {
-      this.logger.error(`Error creating post: ${err.message}`, err.stack);
       throw new Error('Failed to create post');
     }
   }
 
-  async getPost(hash: string): Promise<Post> {
+  async getPost(hash: string) {
     try {
-      // Try to get from metadata cache
-      const cachedPost = await this.metadataCacheClient.get(hash);
+      this.incrementViews(hash)
+      const cachedPost = await this.getCacheData(hash);
       if (cachedPost) {
-        return JSON.parse(cachedPost);
+        const cachedData = JSON.parse(cachedPost);
+        cachedData.Body = Buffer.from(cachedData.Body, 'base64'); 
+        return cachedData;
       }
-
-      // Fetch from database
       const post = await this.postRepository.findOne({ where: { hash } });
       if (post) {
-        // Cache the metadata
-        await this.metadataCacheClient.set(hash, JSON.stringify(post), 'EX', 3600); // cache for 1 hour
+        const fileContent = await this.S3Service.getFile(post.content);
+        this.setCacheData(post,hash,fileContent)
+        return fileContent;
       }
-
-      return post;
     } catch (err) {
-      this.logger.error(`Error getting post: ${err.message}`, err.stack);
       throw new Error('Failed to get post');
     }
   }
 
+  private async getCacheData(hash:string) {
+    const propulatPost = await this.metadataCacheClient.get(hash);
+    if(propulatPost){
+      console.log('fetch from popular cache')
+      return propulatPost;
+    }
+    const cachedPost = await this.blockCacheClient.get(hash);
+    if(cachedPost){
+      console.log('fetch from block cache')
+      return cachedPost;
+    }
+    return null
+  }
+
+  private async setCacheData(post: Post, hash:string, fileContent){
+
+    const dataToCache = {
+      Body: fileContent.Body.toString('base64'), 
+      ContentType: fileContent.ContentType,
+    };
+
+    if(post.views > 10) {
+      console.log('set from popular cache')
+      await this.metadataCacheClient.set(
+        hash,
+        JSON.stringify(dataToCache),
+        'EX',
+        3600
+      ); // Cache for 1 hour
+      return
+    }
+    console.log('set from block cache')
+    await this.blockCacheClient.set(
+      hash,
+      JSON.stringify(dataToCache),
+      'EX',
+      600
+    ); // Cache for 10 minutes
+    return
+  }
+
   async incrementViews(hash: string): Promise<void> {
     try {
-      const post = await this.getPost(hash);
+      const post = await this.postRepository.findOne({
+        where: {hash}
+      });
       if (post) {
         post.views++;
         await this.postRepository.save(post);
       }
     } catch (err) {
-      this.logger.error(`Error incrementing views: ${err.message}`, err.stack);
       throw new Error('Failed to increment views');
     }
   }
@@ -94,7 +121,6 @@ export class PostService {
         take: 10,
       });
     } catch (err) {
-      this.logger.error(`Error getting popular posts: ${err.message}`, err.stack);
       throw new Error('Failed to get popular posts');
     }
   }

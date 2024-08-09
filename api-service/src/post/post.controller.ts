@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, Res, HttpException, HttpStatus } from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 
 @Controller('post')
 export class PostController {
@@ -14,15 +15,20 @@ export class PostController {
   }
 
   @Get(':hash')
-  async getPost(@Param('hash') hash: string) {
-    return this.postService.getPost(hash);
+  async getPost(@Param('hash') hash: string, @Res() res: Response) {
+    try {
+      const data = await this.postService.getPost(hash);
+      res.setHeader('Content-Disposition', `attachment; filename=${hash}`);
+      res.setHeader('Content-Type', data.ContentType);
+      res.send(data.Body);
+    } catch (err) {
+      if (err.code === 'NoSuchKey') {
+        throw new HttpException('File not found.', HttpStatus.NOT_FOUND);
+      } else {
+        throw new HttpException(err.message, HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
   }
-
-  @Patch(':hash/views')
-  async incrementViews(@Param('hash') hash: string) {
-    return this.postService.incrementViews(hash);
-  }
-
   @Get('popular')
   async getPopularPosts() {
     return this.postService.getPopularPosts();
