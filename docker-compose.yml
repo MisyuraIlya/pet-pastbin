@@ -40,7 +40,10 @@ services:
     image: nginx:latest
     container_name: s3_load_balancer
     ports:
-      - "8082:80"  # Expose port 8082 for the second load balancer
+      - "8082:80"  # HTTP for services
+      - "6383:6380"  # Redis block cache
+      - "6384:6381"  # Redis metadata cache
+      - "5435:5432"  # PostgreSQL
     volumes:
       - ./nginx-s3.conf:/etc/nginx/nginx.conf:ro
     depends_on:
