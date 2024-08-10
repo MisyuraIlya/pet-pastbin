@@ -11,13 +11,25 @@ services:
       - ./nginx-api.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - api_service
+      - api_service_2
 
-  # API Service
+  # API Service 1
   api_service:
     build: ./api-service
     container_name: api_service
     ports:
       - "8080:3000"
+    depends_on:
+      - minio
+      - block_cache_redis
+      - metadata_cache_redis
+
+  # API Service 2
+  api_service_2:
+    build: ./api-service
+    container_name: api_service_2
+    ports:
+      - "8083:3000"
     depends_on:
       - minio
       - block_cache_redis
