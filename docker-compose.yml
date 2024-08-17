@@ -56,11 +56,6 @@ services:
   hash_service:
     build: ./hash-service
     container_name: hash_service
-    environment:
-      POSTGRES_DB: hash_db
-      POSTGRES_USER: hash_db_user
-      POSTGRES_PASSWORD: hash_db_password
-      REDIS_URL: redis://hash_redis:6382
     ports:
       - "5000:3000"
     depends_on:

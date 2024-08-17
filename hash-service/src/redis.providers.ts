@@ -8,7 +8,12 @@ export const redisProviders: Provider[] = [
   {
     provide: REDIS_HASH,
     useFactory: () => {
-      return new Redis('redis://hash_redis:6379');
+      return new Redis({
+        host:process.env.REDIS_URL,
+        port:6380,
+        password:'myredishhashforthisproject',
+        tls:{}
+      });
     },
   },
 ];

@@ -19,7 +19,7 @@ export class HashService {
     if (cachedHash) {
       console.log('get hash from cache')
       this.updateCacheWithNewHash();
-      this.updateUsed(cachedHash)
+      await this.updateUsed(cachedHash)
       return cachedHash;
     }
 
@@ -66,8 +66,10 @@ export class HashService {
     const res = await this.hashRepository.findOne({
       where:{hash}
     })
-    res.isUsed = true
-    this.hashRepository.save(res)
+    if(res){
+      res.isUsed = true
+      this.hashRepository.save(res)
+    }
   }
 
   private async useUnusedHash(): Promise<string> {

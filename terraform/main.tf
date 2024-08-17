@@ -4,8 +4,8 @@ provider "aws" {
 
 # VPC
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
-  enable_dns_support = true
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_support   = true
   enable_dns_hostnames = true
 }
 
@@ -16,11 +16,11 @@ resource "aws_internet_gateway" "main" {
 
 # Public Subnets
 resource "aws_subnet" "public" {
-  count = 2
-  vpc_id = aws_vpc.main.id
-  cidr_block = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index)
+  count                   = 2
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = cidrsubnet(aws_vpc.main.cidr_block, 8, count.index)
   map_public_ip_on_launch = true
-  availability_zone = element(data.aws_availability_zones.available.names, count.index)
+  availability_zone       = element(data.aws_availability_zones.available.names, count.index)
 }
 
 data "aws_availability_zones" "available" {}
@@ -36,15 +36,15 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table_association" "public" {
-  count = 2
-  subnet_id = aws_subnet.public[count.index].id
+  count          = 2
+  subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
 
 # Database Subnet Group
 resource "aws_db_subnet_group" "main" {
-  name       = "main-db-subnet-group"
-  subnet_ids = aws_subnet.public.*.id
+  name        = "main-db-subnet-group"
+  subnet_ids  = aws_subnet.public.*.id
   description = "Main subnet group for RDS instances"
 }
 
@@ -64,31 +64,31 @@ resource "aws_s3_bucket" "s3_bucket" {
 
 # RDS Instances
 resource "aws_db_instance" "metadata_db" {
-  allocated_storage    = 20
-  storage_type         = "gp2"
-  engine               = "postgres"
-  instance_class       = "db.t3.micro"
-  db_name              = "metadata_db"
-  username             = "metadata_db_user"
-  password             = "metadata_db_password"
-  parameter_group_name = "default.postgres16" # Update to the correct parameter group
-  skip_final_snapshot  = true
+  allocated_storage      = 20
+  storage_type           = "gp2"
+  engine                 = "postgres"
+  instance_class         = "db.t3.micro"
+  db_name                = "metadata_db"
+  username               = "metadata_db_user"
+  password               = "metadata_db_password"
+  parameter_group_name   = "default.postgres16" # Update to the correct parameter group
+  skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.db_sg.id]
-  db_subnet_group_name = aws_db_subnet_group.main.name
+  db_subnet_group_name   = aws_db_subnet_group.main.name
 }
 
 resource "aws_db_instance" "hash_db" {
-  allocated_storage    = 20
-  storage_type         = "gp2"
-  engine               = "postgres"
-  instance_class       = "db.t3.micro"
-  db_name              = "hash_db"
-  username             = "hash_db_user"
-  password             = "hash_db_password"
-  parameter_group_name = "default.postgres16" # Update to the correct parameter group
-  skip_final_snapshot  = true
+  allocated_storage      = 20
+  storage_type           = "gp2"
+  engine                 = "postgres"
+  instance_class         = "db.t3.micro"
+  db_name                = "hash_db"
+  username               = "hash_db_user"
+  password               = "hash_db_password"
+  parameter_group_name   = "default.postgres16" # Update to the correct parameter group
+  skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.db_sg.id]
-  db_subnet_group_name = aws_db_subnet_group.main.name
+  db_subnet_group_name   = aws_db_subnet_group.main.name
 }
 
 # ElastiCache Redis Clusters
@@ -98,30 +98,30 @@ resource "aws_elasticache_subnet_group" "main" {
 }
 
 resource "aws_elasticache_cluster" "block_cache_redis" {
-  cluster_id           = "block-cache-redis"
-  node_type            = "cache.t3.micro"
-  num_cache_nodes      = 1
-  engine               = "redis"
-  security_group_ids   = [aws_security_group.redis_sg.id]
-  subnet_group_name    = aws_elasticache_subnet_group.main.name
+  cluster_id         = "block-cache-redis"
+  node_type          = "cache.t3.micro"
+  num_cache_nodes    = 1
+  engine             = "redis"
+  security_group_ids = [aws_security_group.redis_sg.id]
+  subnet_group_name  = aws_elasticache_subnet_group.main.name
 }
 
 resource "aws_elasticache_cluster" "metadata_cache_redis" {
-  cluster_id           = "metadata-cache-redis"
-  node_type            = "cache.t3.micro"
-  num_cache_nodes      = 1
-  engine               = "redis"
-  security_group_ids   = [aws_security_group.redis_sg.id]
-  subnet_group_name    = aws_elasticache_subnet_group.main.name
+  cluster_id         = "metadata-cache-redis"
+  node_type          = "cache.t3.micro"
+  num_cache_nodes    = 1
+  engine             = "redis"
+  security_group_ids = [aws_security_group.redis_sg.id]
+  subnet_group_name  = aws_elasticache_subnet_group.main.name
 }
 
 resource "aws_elasticache_cluster" "hash_redis" {
-  cluster_id           = "hash-redis"
-  node_type            = "cache.t3.micro"
-  num_cache_nodes      = 1
-  engine               = "redis"
-  security_group_ids   = [aws_security_group.redis_sg.id]
-  subnet_group_name    = aws_elasticache_subnet_group.main.name
+  cluster_id         = "hash-redis"
+  node_type          = "cache.t3.micro"
+  num_cache_nodes    = 1
+  engine             = "redis"
+  security_group_ids = [aws_security_group.redis_sg.id]
+  subnet_group_name  = aws_elasticache_subnet_group.main.name
 }
 
 # ECS Cluster
@@ -188,8 +188,8 @@ resource "aws_security_group" "lb_sg" {
 
 # ECS Task Definitions
 resource "aws_ecs_task_definition" "api_service_task" {
-  family                   = "api-service-task"
-  container_definitions    = jsonencode([{
+  family = "api-service-task"
+  container_definitions = jsonencode([{
     name      = "api-service"
     image     = "${aws_ecr_repository.api_service.repository_url}:latest"
     memory    = 512
@@ -203,8 +203,8 @@ resource "aws_ecs_task_definition" "api_service_task" {
 }
 
 resource "aws_ecs_task_definition" "hash_service_task" {
-  family                   = "hash-service-task"
-  container_definitions    = jsonencode([{
+  family = "hash-service-task"
+  container_definitions = jsonencode([{
     name      = "hash-service"
     image     = "${aws_ecr_repository.hash_service.repository_url}:latest"
     memory    = 512
@@ -264,7 +264,7 @@ resource "aws_lb_listener" "api_listener" {
   protocol          = "HTTP"
 
   default_action {
-    type = "forward"
+    type             = "forward"
     target_group_arn = aws_lb_target_group.api_target_group.arn
   }
 }
@@ -275,7 +275,7 @@ resource "aws_lb_listener" "hash_listener" {
   protocol          = "HTTP"
 
   default_action {
-    type = "forward"
+    type             = "forward"
     target_group_arn = aws_lb_target_group.hash_target_group.arn
   }
 }
