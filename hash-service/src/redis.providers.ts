@@ -10,9 +10,7 @@ export const redisProviders: Provider[] = [
     useFactory: () => {
       return new Redis({
         host:process.env.REDIS_URL,
-        port:6380,
-        password:'myredishhashforthisproject',
-        tls:{}
+        port:6379
       });
     },
   },
