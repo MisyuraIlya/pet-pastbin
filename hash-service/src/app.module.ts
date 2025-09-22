@@ -23,11 +23,11 @@ import { HealthCheckModule } from './health-check/health-check.module';
         console.log('REDIS',configService.get('REDIS_URL'))
         return {
           type:'postgres',
-          host:configService.get('POSTGRES_HOST'),
-          port:configService.get('POSTGRES_PORT'),
-          username:configService.get('POSTGRES_USER'),
-          password:configService.get('POSTGRES_PASSWORD'),
-          database:configService.get('POSTGRES_DB'),
+          host:'testhashdb2.cbai646e2swf.eu-central-1.rds.amazonaws.com',
+          port:5432,
+          username:'testHashDb',
+          password:'Aa123456',
+          database:'hash_db',
           autoLoadEntities:true,
           synchronize:true,
           ssl: process.env.STAGE === 'prod' ? { rejectUnauthorized: false } : false,

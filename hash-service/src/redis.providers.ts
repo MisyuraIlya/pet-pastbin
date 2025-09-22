@@ -9,7 +9,7 @@ export const redisProviders: Provider[] = [
     provide: REDIS_HASH,
     useFactory: () => {
       return new Redis({
-        host:process.env.REDIS_URL,
+        host:'redis-test-01.tulhxo.ng.0001.euc1.cache.amazonaws.com',
         port:6379
       });
     },
